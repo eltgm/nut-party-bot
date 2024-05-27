@@ -19,7 +19,6 @@ public class TelegramApi {
 
     @Bean
     public TelegramClient telegramClient() {
-        System.out.println("tg client - " + token);
         return new OkHttpTelegramClient(token);
     }
 
