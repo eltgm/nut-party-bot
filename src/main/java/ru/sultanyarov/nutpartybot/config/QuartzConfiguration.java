@@ -42,7 +42,7 @@ public class QuartzConfiguration {
         factory.setOverwriteExistingJobs(true);
         Scheduler scheduler = factory.getScheduler();
         rescheduleTriggers(triggers, scheduler);
-        scheduler.start();
+        //scheduler.start();
 
         return scheduler;
     }
