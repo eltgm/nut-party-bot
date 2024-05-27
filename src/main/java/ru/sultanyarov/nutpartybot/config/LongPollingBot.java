@@ -23,7 +23,7 @@ public class LongPollingBot implements SpringLongPollingBot, LongPollingSingleTh
 
     @Override
     public String getBotToken() {
-        return token;
+        return "7047035187:AAE43JFdA9ihZ2-dH2xdhl-W00nROtRzbWo";
     }
 
     @Override

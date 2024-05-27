@@ -10,3 +10,7 @@ management:
     web:
       exposure:
         include: health, info, loggers
+
+logging:
+  level:
+    org.telegram: TRACE

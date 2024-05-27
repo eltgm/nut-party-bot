@@ -19,7 +19,7 @@ public class TelegramApi {
 
     @Bean
     public TelegramClient telegramClient() {
-        return new OkHttpTelegramClient(token);
+        return new OkHttpTelegramClient("7047035187:AAE43JFdA9ihZ2-dH2xdhl-W00nROtRzbWo");
     }
 
     public void test(TelegramClient telegramClient) throws TelegramApiException {
