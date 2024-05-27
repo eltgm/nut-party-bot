@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: nut-party-bot
+
+bot:
+  token: ${TG_BOT_TOKEN}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, loggers
