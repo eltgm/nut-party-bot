@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: nut-party-bot
+
+bot:
+  token: ${TG_BOT_TOKEN}
+
+channels:
+  admin: ${ADMIN_ID}
+  groups: ${GROUPS_ID}
+
+mongock:
+  migration-scan-package:
+    - ru.sultanyarov.nutpartybot.domain.migration
+  transactionEnabled: false
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, loggers

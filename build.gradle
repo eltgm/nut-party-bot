@@ -23,11 +23,15 @@ repositories {
 
 ext {
     tgBotsApiVersion = '7.2.1'
+    mongockVersion = '5.4.2'
+    mongodbVersion = '4.11.2' //because of spring data reactive doesn't work with 5+ version
+    /*
+    The following methods and types related to the StreamFactory interface are deprecated and scheduled for removal in v5.0:
+    getStreamFactoryFactory() method from MongoClientSettings
+     */
 }
 
 dependencies {
-    //implementation 'org.springframework.boot:spring-boot-starter-data-mongodb-reactive'
-    implementation 'org.springframework.boot:spring-boot-starter-quartz'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     compileOnly 'org.projectlombok:lombok'
@@ -40,6 +44,16 @@ dependencies {
     //tg api
     implementation "org.telegram:telegrambots-springboot-longpolling-starter:${tgBotsApiVersion}"
     implementation "org.telegram:telegrambots-client:${tgBotsApiVersion}"
+
+    //mongock
+    implementation "io.mongock:mongock-springboot-v3:${mongockVersion}"
+    implementation "io.mongock:mongodb-reactive-driver:${mongockVersion}"
+
+    //mongo
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb-reactive'
+    implementation "org.mongodb:mongodb-driver-reactivestreams:${mongodbVersion}"
+    implementation "org.mongodb:mongodb-driver-core:${mongodbVersion}"
+    implementation "org.mongodb:bson:${mongodbVersion}"
 }
 
 tasks.named('test') {
