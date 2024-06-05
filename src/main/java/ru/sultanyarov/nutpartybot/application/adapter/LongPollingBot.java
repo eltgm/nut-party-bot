@@ -13,7 +13,7 @@ import ru.sultanyarov.nutpartybot.service.service.PollService;
 @Component
 @RequiredArgsConstructor
 public class LongPollingBot implements SpringLongPollingBot, LongPollingSingleThreadUpdateConsumer {
-    @Value("${bot.token}")
+    @Value("${bot.tg.token}")
     private String token;
 
     private final PollService pollService;
