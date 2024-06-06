@@ -9,8 +9,9 @@ import ru.sultanyarov.nutpartybot.domain.model.MovieInfo;
 import ru.sultanyarov.nutpartybot.service.service.GoogleService;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -23,10 +24,10 @@ public class GoogleServiceImpl implements GoogleService {
     private final GoogleSpreadSheetProperties googleSpreadSheetProperties;
 
     @Override
-    public List<MovieInfo> getFilmsFromTables(List<String> tablesName) {
+    public Set<MovieInfo> getFilmsFromTables(List<String> tablesName) {
         log.info("Getting films from tables: {}", tablesName);
 
-        List<MovieInfo> movies = new ArrayList<>();
+        Set<MovieInfo> movies = new HashSet<>();
         for (String tableName : tablesName) {
             int rowNumber = 1;
             List<MovieInfo> movieInfos;
