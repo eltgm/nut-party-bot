@@ -1,9 +1,21 @@
 spring:
+  data:
+    mongodb:
+      uri: ${MONGO_URI}
+      username: ${DATASOURCE_USERNAME}
+      password: ${DATASOURCE_PASSWORD}
   application:
     name: nut-party-bot
 
 bot:
-  token: ${TG_BOT_TOKEN}
+  enable-film-refresh: false
+  films-refresh: ${FILMS_REFRESH_CRON}
+  google:
+    token: ${GOOGLE_TOKEN}
+    spreadsheet-id: ${GOOGLE_SPREADSHEET_ID}
+    tables: ${TABLES}
+  tg:
+    token: ${TG_BOT_TOKEN}
 
 channels:
   admin: ${ADMIN_ID}
@@ -14,6 +26,8 @@ mongock:
     - ru.sultanyarov.nutpartybot.domain.migration
   transactionEnabled: false
 
+book:
+  places-count: ${PLACES_COUNT}
 
 management:
   endpoints:
