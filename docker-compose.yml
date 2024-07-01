@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  mongodb:
+    image: 'mongo:4.4.29'
+    environment:
+      - 'MONGO_INITDB_DATABASE=nut-party-db'
+      - 'MONGO_INITDB_ROOT_PASSWORD=secret'
+      - 'MONGO_INITDB_ROOT_USERNAME=root'
+    ports:
+      - '27017:27017'

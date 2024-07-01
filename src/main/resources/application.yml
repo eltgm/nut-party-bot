@@ -1,0 +1,42 @@
+spring:
+  data:
+    mongodb:
+      uri: ${MONGO_URI}
+      username: ${DATASOURCE_USERNAME}
+      password: ${DATASOURCE_PASSWORD}
+  application:
+    name: nut-party-bot
+
+bot:
+  scheduling:
+    enable-scheduled-task: ${ENABLE_SCHEDULED_TASKS}
+    films-refresh: ${FILMS_REFRESH_CRON}
+    get-activity-days: ${GET_ACTIVITY_DAYS_CRON}
+    end-poll-notify: ${END_POLL_NOTIFY_CRON}
+    collect-poll-results: ${COLLECT_POLL_RESULTS_CRON}
+    clear-bookings: ${CLEAR_BOOKINGS_CRON}
+  google:
+    token: ${GOOGLE_TOKEN}
+    spreadsheet-id: ${GOOGLE_SPREADSHEET_ID}
+    tables: ${TABLES}
+    tabletop-table: ${TABLE_TOP_TABLE}
+  tg:
+    token: ${TG_BOT_TOKEN}
+
+channels:
+  admin: ${ADMIN_ID}
+  groups: ${GROUPS_ID}
+
+mongock:
+  migration-scan-package:
+    - ru.sultanyarov.nutpartybot.domain.migration
+  transactionEnabled: false
+
+book:
+  places-count: ${PLACES_COUNT}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, loggers
