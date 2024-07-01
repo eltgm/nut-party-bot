@@ -44,4 +44,7 @@ public class PollDocument {
 
     @Field("votes")
     private Map<String, Integer> votes;
+
+    @Field("isAdmin")
+    private Boolean isAdmin;
 }

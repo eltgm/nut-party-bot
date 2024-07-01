@@ -13,5 +13,4 @@ public class NotFoundException extends ServiceException {
     public NotFoundException(Throwable cause, String messagePattern, Object... args) {
         super(cause, messagePattern, args);
     }
-
 }

@@ -12,20 +12,20 @@ import java.util.stream.Collectors;
 
 @Getter
 @RequiredArgsConstructor
-public enum PollType {
-    DATE_POLL_DOCUMENT_NAME("datePoll"),
-    ACTIVITY_POLL_DOCUMENT_NAME("activityPoll");
+public enum ActivityType {
+    FILM("Кино"),
+    TABLETOP("Настолки");
 
-    private static final ImmutableMap<String, PollType> pollTypeCodeImmutableMap =
-            ImmutableMap.<String, PollType>builder()
+    private static final ImmutableMap<String, ActivityType> activityTypeCodeImmutableMap =
+            ImmutableMap.<String, ActivityType>builder()
                     .putAll(
-                            Arrays.stream(PollType.values())
-                                    .collect(Collectors.toMap(PollType::getValue, Function.identity()))
+                            Arrays.stream(ActivityType.values())
+                                    .collect(Collectors.toMap(ActivityType::getValue, Function.identity()))
                     )
                     .build();
 
-    public static PollType of(String name) {
-        return Optional.ofNullable(pollTypeCodeImmutableMap.get(name))
+    public static ActivityType of(String name) {
+        return Optional.ofNullable(activityTypeCodeImmutableMap.get(name))
                 .orElseThrow(() -> new NotFoundException("Not found  for code={}", name));
     }
 

@@ -2,26 +2,43 @@ package ru.sultanyarov.nutpartybot.service.facade.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.polls.PollAnswer;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
+import reactor.core.publisher.Mono;
+import ru.sultanyarov.nutpartybot.application.config.ChannelsProperties;
+import ru.sultanyarov.nutpartybot.domain.entity.PollDocument;
 import ru.sultanyarov.nutpartybot.domain.exception.NotFoundException;
 import ru.sultanyarov.nutpartybot.domain.exception.TooManyBooksException;
+import ru.sultanyarov.nutpartybot.domain.model.ActivityType;
+import ru.sultanyarov.nutpartybot.domain.model.TabletopInfo;
 import ru.sultanyarov.nutpartybot.service.facade.TelegramFacade;
 import ru.sultanyarov.nutpartybot.service.service.BookService;
 import ru.sultanyarov.nutpartybot.service.service.FilmService;
+import ru.sultanyarov.nutpartybot.service.service.PollService;
+import ru.sultanyarov.nutpartybot.service.service.TabletopService;
+import ru.sultanyarov.nutpartybot.service.utils.PollUtility;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
 
+import static ru.sultanyarov.nutpartybot.domain.model.PollType.ACTIVITY_POLL_DOCUMENT_NAME;
+import static ru.sultanyarov.nutpartybot.domain.model.PollType.DATE_POLL_DOCUMENT_NAME;
+import static ru.sultanyarov.nutpartybot.service.utils.AnswersConstants.PARTY_SKIP_ANSWER;
 import static ru.sultanyarov.nutpartybot.service.utils.TelegramMessageConstants.BOOK_PLACE_MESSAGE;
 import static ru.sultanyarov.nutpartybot.service.utils.TelegramMessageConstants.FILM_LIST_MESSAGE;
 import static ru.sultanyarov.nutpartybot.service.utils.TelegramMessageConstants.MENU_MESSAGE;
 import static ru.sultanyarov.nutpartybot.service.utils.TelegramMessageConstants.REMOVE_BOOK_PLACE_MESSAGE;
+import static ru.sultanyarov.nutpartybot.service.utils.TelegramMessageConstants.TABLETOP_LIST_MESSAGE;
 
 @Slf4j
 @Service
@@ -30,53 +47,63 @@ public class TelegramFacadeImpl implements TelegramFacade {
     private final TelegramClient telegramClient;
     private final FilmService filmService;
     private final BookService bookService;
+    private final PollService pollService;
+    private final ChannelsProperties channelsProperties;
+    private final TabletopService tabletopService;
 
     @Override
     public void sendStartMessage(Long chatId) {
         log.info("Sending start message to chat {}", chatId);
-        var sendMessage = new SendMessage(chatId.toString(), "Выбирай");
-        sendMessage.setChatId(chatId);
-        sendMessage.enableMarkdown(true);
+        sendMessage(getMenuMessage(chatId));
+    }
+
+    private @NotNull SendMessage getMenuMessage(Long chatId) {
+        var message = new SendMessage(chatId.toString(), "Выбирай");
+        message.setChatId(chatId);
+        message.enableMarkdown(true);
+
         var replyKeyboardMarkup = ReplyKeyboardMarkup.builder()
-                .keyboard(
-                        List.of(
-                                new KeyboardRow(
-                                        KeyboardButton.builder()
-                                                .text(FILM_LIST_MESSAGE)
-                                                .build(),
-                                        KeyboardButton.builder()
-                                                .text(BOOK_PLACE_MESSAGE)
-                                                .build(),
-                                        KeyboardButton.builder()
-                                                .text(REMOVE_BOOK_PLACE_MESSAGE)
-                                                .build()
-                                ),
-                                new KeyboardRow(
-                                        KeyboardButton.builder()
-                                                .text(MENU_MESSAGE)
-                                                .build()
-                                )
-                        )
-                )
+                .keyboard(getKeyboardRows())
                 .selective(true)
                 .build();
-        sendMessage.setReplyMarkup(replyKeyboardMarkup);
+        message.setReplyMarkup(replyKeyboardMarkup);
 
-        try {
-            telegramClient.execute(sendMessage);
-        } catch (TelegramApiException e) {
-            log.error("Telegram API exception while send keyboard to chat {}", chatId, e);
-            throw new RuntimeException(e);
-        }
+        return message;
+    }
+
+    private @NotNull List<KeyboardRow> getKeyboardRows() {
+        return List.of(
+                new KeyboardRow(
+                        KeyboardButton.builder()
+                                .text(FILM_LIST_MESSAGE)
+                                .build(),
+                        KeyboardButton.builder()
+                                .text(TABLETOP_LIST_MESSAGE)
+                                .build(),
+                        KeyboardButton.builder()
+                                .text(BOOK_PLACE_MESSAGE)
+                                .build(),
+                        KeyboardButton.builder()
+                                .text(REMOVE_BOOK_PLACE_MESSAGE)
+                                .build()
+                ),
+                new KeyboardRow(
+                        KeyboardButton.builder()
+                                .text(MENU_MESSAGE)
+                                .build()
+                )
+        );
     }
 
     @Override
     public void addFilm(String filmName) {
+        log.info("Adding film {}", filmName);
         filmService.addFilmWithNotification(filmName);
     }
 
     @Override
     public void getFilms(Long chatId) {
+        log.info("Getting films");
         filmService.getActualFilms()
                 .collectList()
                 .subscribe(strings -> {
@@ -85,57 +112,223 @@ public class TelegramFacadeImpl implements TelegramFacade {
                         formattedFilmsList.add(String.format("%d. %s", i, strings.get(i - 1)));
                     }
                     var message = String.join("\n", formattedFilmsList);
-                    sendMessage(chatId, message);
+                    createAndSendMessage(chatId, message);
                 });
     }
 
     @Override
     public void bookPlace(Long chatId, String userName) {
+        log.info("Booking place for {}", userName);
         bookService.bookPlace(userName)
                 .doOnError(throwable -> {
                     if (throwable instanceof TooManyBooksException) {
-                        sendMessage(chatId, "Мест нет!");
+                        createAndSendMessage(chatId, "Мест нет!");
                     } else {
-                        sendMessage(chatId, "Непредвиденная ошибка. Пиши @eltgm");
+                        createAndSendMessage(chatId, "Непредвиденная ошибка. Пиши @eltgm");
                     }
                 })
-                .subscribe(bookingDocument -> sendMessage(chatId, "Место успешно забронировано"));
+                .subscribe(bookingDocument -> createAndSendMessage(chatId, "Место успешно забронировано"));
     }
 
     @Override
     public void unBookPlace(Long chatId, String userName) {
+        log.info("Unbooking place for {}", userName);
         bookService.unBookPlace(userName)
                 .doOnError(throwable -> {
                     if (throwable instanceof NotFoundException) {
-                        sendMessage(chatId, "У тебя нет броней, не парься");
+                        createAndSendMessage(chatId, "У тебя нет броней, не парься");
                     } else {
-                        sendMessage(chatId, "Непредвиденная ошибка. Пиши @eltgm");
+                        createAndSendMessage(chatId, "Непредвиденная ошибка. Пиши @eltgm");
                     }
                 })
-                .doOnSuccess(bookingDocument -> sendMessage(chatId, "Бронь снята!"))
+                .doOnSuccess(bookingDocument -> createAndSendMessage(chatId, "Бронь снята!"))
                 .subscribe();
     }
 
     @Override
     public void showMenu(Long chatId) {
-        sendMessage(chatId, """
-                /start - запуск бота
-                /addFilm название_фильма - добавить фильм в список
-                """);
+        log.info("Showing menu");
+        createAndSendMessage(chatId,
+                """
+                        /start - запуск бота
+                        /addFilm название_фильма - добавить фильм в список
+                        /tabletop - список настольных игр
+                        """
+        );
     }
 
     @Override
     public void sendError(Long chatId) {
-        sendMessage(chatId, "Неизвестная команда!");
+        log.info("Sending error message to chat {}", chatId);
+        createAndSendMessage(chatId, "Неизвестная команда!");
     }
 
-    private void sendMessage(Long chatId, String text) {
-        var sendMessage = new SendMessage(chatId.toString(),
-                text);
+    @Override
+    public void processDatePollResults(PollAnswer pollAnswer) {
+        log.info("Processing date-poll results from admin");
+        var pollId = Long.valueOf(pollAnswer.getPollId());
+        var optionIds = pollAnswer.getOptionIds();
+
+        //End admin poll
+        pollService.updatePollResults(pollId, optionIds);
+        pollService.closePoll(pollId);
+
+        pollService.getPollAnswers(pollId)
+                .map(answers -> checkSkipParty(answers, optionIds))
+                .subscribe(skipParty -> createDatePollToChannels(skipParty, optionIds));
+    }
+
+    @Override
+    public void sendEndPollNotification() {
+        log.info("Sending end poll notification");
+        pollService.getActivePolls()
+                .filter(pollDocument -> !pollDocument.getIsAdmin())
+                .subscribe(pollDocument -> createAndSendMessageWithReply(
+                        pollDocument.getChatId(),
+                        "Внимание! Attention! Warning! Alarm! Uwaga! Achtung! Опрос завершится через 5 минут",
+                        pollDocument.getMessageId())
+                );
+    }
+
+    @Override
+    public void collectPollResults() {
+        log.info("Collecting poll results");
+        pollService.getActivePolls()
+                .filter(pollDocument -> !pollDocument.getIsAdmin())
+                .subscribe(
+                        pollDocument -> {
+                            var chatId = pollDocument.getChatId();
+                            var votesStream = pollDocument.getVotes()
+                                    .entrySet()
+                                    .stream();
+
+                            switch (pollDocument.getType()) {
+                                case DATE_POLL_DOCUMENT_NAME -> sendDatePollResult(votesStream, chatId);
+                                case ACTIVITY_POLL_DOCUMENT_NAME -> sendActivityType(votesStream, chatId);
+                            }
+
+                            pollService.closePoll(pollDocument.getId());
+                        }
+                );
+    }
+
+    private void sendDatePollResult(Stream<Map.Entry<String, Integer>> votesStream, Long chatId) {
+        var countOfParticipantsToPartyStart = 1;
+        Optional<Boolean> isPartyStart = votesStream
+                .filter(stringIntegerEntry -> !stringIntegerEntry.getKey().equals(PARTY_SKIP_ANSWER))
+                .map(stringIntegerEntry -> stringIntegerEntry.getValue() >= countOfParticipantsToPartyStart)
+                .filter(aBoolean -> aBoolean)
+                .findFirst();
+
+        if (isPartyStart.isPresent()) {
+            pollService.createPoll(ACTIVITY_POLL_DOCUMENT_NAME, chatId, false);
+        } else {
+            createAndSendMessage(chatId, "Ну и фиг с вами, буду плакать один...");
+        }
+    }
+
+    private void sendActivityType(Stream<Map.Entry<String, Integer>> votesStream, Long chatId) {
+        votesStream
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .ifPresent(activity -> {
+                    var activityType = ActivityType.of(activity);
+                    switch (activityType) {
+                        case FILM -> filmService.getRandomFilmName()
+                                .subscribe(filmDocument -> createAndSendMessage(chatId, "Смотрим кино - " + filmDocument.getName()));
+                        case TABLETOP -> createAndSendMessage(chatId, "Играем в настолку. Посмотреть список /tabletop");
+                    }
+                });
+    }
+
+    @Override
+    public void updateDatePollResults(PollAnswer pollAnswer) {
+        log.info("Updating date-poll results");
+        var pollId = Long.valueOf(pollAnswer.getPollId());
+        var optionIds = pollAnswer.getOptionIds();
+
+        pollService.getPollAnswers(pollId)
+                .map(answers -> checkSkipParty(answers, optionIds))
+                .subscribe(skipParty -> {
+                    if (!skipParty) {
+                        pollService.updatePollResults(pollId, optionIds);
+                    }
+                });
+    }
+
+    @Override
+    public void updateActivityPollResults(PollAnswer pollAnswer) {
+        log.info("Updating activity-poll results");
+        var pollId = Long.valueOf(pollAnswer.getPollId());
+        var optionIds = pollAnswer.getOptionIds();
+
+        pollService.getPollAnswers(pollId)
+                .subscribe(answers -> pollService.updatePollResults(pollId, optionIds));
+    }
+
+    @Override
+    public Mono<PollDocument> getPoll(Long pollId) {
+        log.info("Getting poll {}", pollId);
+        return pollService.getPoll(pollId);
+    }
+
+    @Override
+    public void getTabletops(Long chatId) {
+        log.info("Getting tabletops");
+
+        var tabletopFormattedString = getTabletopFormattedString();
+
+        var message = new SendMessage(chatId.toString(), tabletopFormattedString);
+        sendMessage(message);
+    }
+
+    private @NotNull String getTabletopFormattedString() {
+        var stringBuilder = new StringBuilder();
+        List<TabletopInfo> allTabletops = tabletopService.getAllTabletops();
+        int tabletopsCount = 1;
+        for (TabletopInfo tabletopInfo : allTabletops) {
+            if (!tabletopInfo.inStock()) {
+                continue;
+            }
+
+            stringBuilder.append(String.format("%-4s〽%-4.1f:  %s", (tabletopsCount++) + ".", tabletopInfo.mark(), tabletopInfo.name()));
+            stringBuilder.append("\n");
+        }
+        return stringBuilder.toString();
+    }
+
+    private void createDatePollToChannels(Boolean skipParty, List<Integer> optionIds) {
+        if (skipParty) {
+            log.info("Admin skipped meeting.");
+            return;
+        }
+        log.info("Creating poll");
+        //Create poll to admin
+        optionIds.add(3); //hardcoded skip value
+        pollService.createPolls(DATE_POLL_DOCUMENT_NAME, channelsProperties.getGroups(), optionIds, false);
+    }
+
+    private boolean checkSkipParty(List<String> answers, List<Integer> optionIds) {
+        var mappedVotes = PollUtility.getMappedVotes(optionIds, answers);
+        return mappedVotes.contains(PARTY_SKIP_ANSWER);
+    }
+
+    private void createAndSendMessage(Long chatId, String text) {
+        var message = new SendMessage(chatId.toString(), text);
+        sendMessage(message);
+    }
+
+    private void createAndSendMessageWithReply(Long chatId, String text, Integer replyMessageId) {
+        var message = new SendMessage(chatId.toString(), text);
+        message.setReplyToMessageId(replyMessageId);
+        sendMessage(message);
+    }
+
+    private void sendMessage(SendMessage sendMessage) {
         try {
             telegramClient.execute(sendMessage);
         } catch (TelegramApiException e) {
-            log.error("Telegram API exception while send message to chat {}", chatId, e);
+            log.error("Telegram API exception while send message to chat {}", sendMessage.getChatId(), e);
             throw new RuntimeException(e);
         }
     }
