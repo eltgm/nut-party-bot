@@ -8,6 +8,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import ru.sultanyarov.nutpartybot.domain.model.PollType;
 
 import java.util.List;
 
@@ -19,7 +20,7 @@ import java.util.List;
 public class PollInfoDocument {
     @Id
     @Indexed(unique = true)
-    private String name;
+    private PollType name;
 
     @Field("question")
     private String question;

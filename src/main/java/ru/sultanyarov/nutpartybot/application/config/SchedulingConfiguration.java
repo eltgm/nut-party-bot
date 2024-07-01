@@ -12,7 +12,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @Configuration
 @EnableScheduling
 @EnableSchedulerLock(defaultLockAtMostFor = "PT10M")
-@ConditionalOnProperty(prefix = "bot", name = "enable-film-refresh", havingValue = "true")
+@ConditionalOnProperty(prefix = "bot.scheduling", name = "enable-scheduled-task", havingValue = "true")
 public class SchedulingConfiguration {
     @Bean
     public LockProvider lockProvider(MongoClient mongo) {

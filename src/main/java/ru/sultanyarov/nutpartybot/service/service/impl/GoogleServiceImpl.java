@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.sultanyarov.nutpartybot.application.config.GoogleSpreadSheetProperties;
 import ru.sultanyarov.nutpartybot.domain.model.MovieInfo;
+import ru.sultanyarov.nutpartybot.domain.model.TabletopInfo;
 import ru.sultanyarov.nutpartybot.service.service.GoogleService;
 
 import java.io.IOException;
@@ -17,9 +18,6 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class GoogleServiceImpl implements GoogleService {
-    private final Integer WATCHED_FILM_FLAG_ID = 0;
-    private final Integer FILM_NAME_ID = 2;
-
     private final Sheets sheets;
     private final GoogleSpreadSheetProperties googleSpreadSheetProperties;
 
@@ -41,7 +39,24 @@ public class GoogleServiceImpl implements GoogleService {
         return movies;
     }
 
+    @Override
+    public Set<TabletopInfo> getTabletopsFromTable(String tableName) {
+        Set<TabletopInfo> tabletopInfos = new HashSet<>();
+        int rowNumber = 5;
+        List<TabletopInfo> tabletopsList;
+
+        while ((tabletopsList = getTabletopsInfo(tableName, rowNumber)) != null) {
+            tabletopInfos.addAll(tabletopsList);
+            rowNumber += 49;
+        }
+
+        return tabletopInfos;
+    }
+
     private List<MovieInfo> getMoviesInfos(String tableName, Integer rowNumber) {
+        var watchedFilmFlagId = 0;
+        var filmNameId = 2;
+
         List<List<Object>> filmDto;
         try {
             filmDto = sheets.spreadsheets()
@@ -62,7 +77,40 @@ public class GoogleServiceImpl implements GoogleService {
         }
 
         return filmDto.stream()
-                .map(filmInfo -> new MovieInfo(Boolean.parseBoolean((String) filmInfo.get(WATCHED_FILM_FLAG_ID)), (String) filmInfo.get(FILM_NAME_ID)))
+                .map(filmInfo -> new MovieInfo(Boolean.parseBoolean((String) filmInfo.get(watchedFilmFlagId)), (String) filmInfo.get(filmNameId)))
+                .toList();
+    }
+
+    private List<TabletopInfo> getTabletopsInfo(String tableName, Integer rowNumber) {
+        var tabletopNameId = 0;
+        var markId = 5;
+        var inStockId = 6;
+
+        List<List<Object>> tabletopDtos;
+        try {
+            tabletopDtos = sheets.spreadsheets()
+                    .values()
+                    .batchGet(googleSpreadSheetProperties.getSpreadsheetId())
+                    .setRanges(List.of(String.format("%s!A%d:G%d", tableName, rowNumber, rowNumber + 49)))
+                    .execute()
+                    .getValueRanges()
+                    .get(0)
+                    .getValues();
+        } catch (IOException e) {
+            log.error("Error while reading spreadsheet", e);
+            throw new RuntimeException(e);
+        }
+
+        if (tabletopDtos == null) {
+            return null;
+        }
+
+        return tabletopDtos.stream()
+                .map(tabletopDto -> new TabletopInfo(
+                        (String) tabletopDto.get(tabletopNameId),
+                        Double.valueOf(((String) tabletopDto.get(markId)).replace(",", ".")),
+                        Boolean.parseBoolean((String) tabletopDto.get(inStockId))
+                ))
                 .toList();
     }
 }

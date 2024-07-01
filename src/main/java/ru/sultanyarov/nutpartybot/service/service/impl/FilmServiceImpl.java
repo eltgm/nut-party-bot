@@ -84,4 +84,9 @@ public class FilmServiceImpl implements FilmService {
                 .flatMap(filmCollectionRepository::save)
                 .subscribe();
     }
+
+    @Override
+    public Mono<FilmDocument> getRandomFilmName() {
+        return filmCollectionRepository.randomFilmName();
+    }
 }

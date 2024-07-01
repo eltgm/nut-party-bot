@@ -1,6 +1,8 @@
 package ru.sultanyarov.nutpartybot.service.service;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import ru.sultanyarov.nutpartybot.domain.entity.FilmDocument;
 
 /**
  * The service to work with request from tg bot
@@ -25,4 +27,11 @@ public interface FilmService {
      * Updating films in DB
      */
     void actualizeFilms();
+
+    /**
+     * Getting random film name
+     *
+     * @return {@link Mono} of {@link FilmDocument}
+     */
+    Mono<FilmDocument> getRandomFilmName();
 }

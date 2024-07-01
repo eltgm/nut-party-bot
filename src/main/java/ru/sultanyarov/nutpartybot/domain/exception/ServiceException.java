@@ -16,9 +16,7 @@ public class ServiceException extends RuntimeException {
         super(getMessage(messagePattern, args), cause);
     }
 
-
     private static String getMessage(String messagePattern, Object[] args) {
         return MessageFormatter.arrayFormat(messagePattern, args).getMessage();
     }
-
 }

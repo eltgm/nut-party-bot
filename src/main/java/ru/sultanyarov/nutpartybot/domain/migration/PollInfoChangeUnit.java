@@ -44,12 +44,12 @@ public class PollInfoChangeUnit {
 
     private List<PollInfoDocument> getPollInfoDocuments() {
         var dateDocument = new PollInfoDocument();
-        dateDocument.setName(DATE_POLL_DOCUMENT_NAME.getValue());
+        dateDocument.setName(DATE_POLL_DOCUMENT_NAME);
         dateDocument.setQuestion("Когда собираемся?");
         dateDocument.setAnswers(List.of("ПТ", "СБ", "ВС", "СКИП"));
 
         var activityDocument = new PollInfoDocument();
-        activityDocument.setName(ACTIVITY_POLL_DOCUMENT_NAME.getValue());
+        activityDocument.setName(ACTIVITY_POLL_DOCUMENT_NAME);
         activityDocument.setQuestion("Что делаем?");
         activityDocument.setAnswers(List.of("Кино", "Настолки"));
 
