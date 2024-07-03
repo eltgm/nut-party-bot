@@ -15,6 +15,7 @@ bot:
     end-poll-notify: ${END_POLL_NOTIFY_CRON}
     collect-poll-results: ${COLLECT_POLL_RESULTS_CRON}
     clear-bookings: ${CLEAR_BOOKINGS_CRON}
+    get-activity: ${GET_ACTIVITY_CRON}
   google:
     token: ${GOOGLE_TOKEN}
     spreadsheet-id: ${GOOGLE_SPREADSHEET_ID}
@@ -22,6 +23,8 @@ bot:
     tabletop-table: ${TABLE_TOP_TABLE}
   tg:
     token: ${TG_BOT_TOKEN}
+  count-of-participants-to-party-start: ${COUNT_OF_PARTICIPANTS_TO_PARTY_START}
+  minus-days-for-activity-poll: ${MINUS_DAYS_FOR_ACTIVITY_POLL}
 
 channels:
   admin: ${ADMIN_ID}

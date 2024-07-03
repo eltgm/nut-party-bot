@@ -4,9 +4,6 @@ import com.google.common.collect.Sets;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import ru.sultanyarov.nutpartybot.application.config.ChannelsProperties;
@@ -16,6 +13,7 @@ import ru.sultanyarov.nutpartybot.domain.model.MovieInfo;
 import ru.sultanyarov.nutpartybot.domain.repository.FilmCollectionRepository;
 import ru.sultanyarov.nutpartybot.service.service.FilmService;
 import ru.sultanyarov.nutpartybot.service.service.GoogleService;
+import ru.sultanyarov.nutpartybot.service.service.TelegramMessagingService;
 
 import java.util.Set;
 import java.util.function.Function;
@@ -26,25 +24,18 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FilmServiceImpl implements FilmService {
     private final FilmCollectionRepository filmCollectionRepository;
-    private final TelegramClient telegramClient;
+    private final TelegramMessagingService telegramMessagingService;
     private final ChannelsProperties channelsProperties;
     private final GoogleService googleService;
     private final GoogleSpreadSheetProperties googleSpreadSheetProperties;
 
     @Override
-    public void addFilmWithNotification(String filmName) {
+    public void addFilmWithNotification(String filmName, Long chatId) {
         log.info("Add film with name: {}", filmName);
         filmCollectionRepository.save(new FilmDocument(filmName))
                 .subscribe(filmDocument -> {
-                    try {
-                        telegramClient.execute(SendMessage.builder()
-                                .chatId(channelsProperties.getAdmin())
-                                .text(String.format("Добавь '%s' в список фильмов!", filmDocument.getName()))
-                                .build());
-                    } catch (TelegramApiException e) {
-                        log.error("Error while save film", e);
-                        throw new RuntimeException(e);
-                    }
+                    telegramMessagingService.createAndSendMessage(channelsProperties.getAdmin(), String.format("Добавь '%s' в список фильмов!", filmDocument.getName()));
+                    telegramMessagingService.createAndSendMessage(chatId, "Запрос на добавление фильма отправлен!");
                 });
     }
 

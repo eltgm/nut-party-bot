@@ -39,9 +39,10 @@ public interface PollService {
     /**
      * Close poll
      *
-     * @param pollId id of poll to close
+     * @param pollId       id of poll to close
+     * @param isPartyStart is party start flag
      */
-    void closePoll(Long pollId);
+    void closePoll(Long pollId, boolean isPartyStart);
 
     /**
      * Get poll results
@@ -73,4 +74,9 @@ public interface PollService {
      * @return {@link Mono} of {@link List} {@link String}
      */
     Mono<List<String>> getPollAnswers(Long pollId);
+
+    /**
+     * Send activity poll
+     */
+    void sendActivityPolls();
 }
