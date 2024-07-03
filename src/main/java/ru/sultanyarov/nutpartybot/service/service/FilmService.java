@@ -13,8 +13,9 @@ public interface FilmService {
      * Adding film to DB and send notification to admin
      *
      * @param filmName film name
+     * @param chatId   chat id to result message
      */
-    void addFilmWithNotification(String filmName);
+    void addFilmWithNotification(String filmName, Long chatId);
 
     /**
      * Getting list of actual films

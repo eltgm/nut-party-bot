@@ -3,14 +3,13 @@ package ru.sultanyarov.nutpartybot.service.facade.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.polls.PollAnswer;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
 import reactor.core.publisher.Mono;
 import ru.sultanyarov.nutpartybot.application.config.ChannelsProperties;
 import ru.sultanyarov.nutpartybot.domain.entity.PollDocument;
@@ -23,6 +22,7 @@ import ru.sultanyarov.nutpartybot.service.service.BookService;
 import ru.sultanyarov.nutpartybot.service.service.FilmService;
 import ru.sultanyarov.nutpartybot.service.service.PollService;
 import ru.sultanyarov.nutpartybot.service.service.TabletopService;
+import ru.sultanyarov.nutpartybot.service.service.TelegramMessagingService;
 import ru.sultanyarov.nutpartybot.service.utils.PollUtility;
 
 import java.util.ArrayList;
@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static ru.sultanyarov.nutpartybot.domain.model.PollType.ACTIVITY_POLL_DOCUMENT_NAME;
 import static ru.sultanyarov.nutpartybot.domain.model.PollType.DATE_POLL_DOCUMENT_NAME;
 import static ru.sultanyarov.nutpartybot.service.utils.AnswersConstants.PARTY_SKIP_ANSWER;
 import static ru.sultanyarov.nutpartybot.service.utils.TelegramMessageConstants.BOOK_PLACE_MESSAGE;
@@ -44,7 +43,10 @@ import static ru.sultanyarov.nutpartybot.service.utils.TelegramMessageConstants.
 @Service
 @RequiredArgsConstructor
 public class TelegramFacadeImpl implements TelegramFacade {
-    private final TelegramClient telegramClient;
+    @Value("${bot.count-of-participants-to-party-start}")
+    private Integer countOfParticipantsToPartyStart;
+
+    private final TelegramMessagingService telegramMessagingService;
     private final FilmService filmService;
     private final BookService bookService;
     private final PollService pollService;
@@ -54,7 +56,7 @@ public class TelegramFacadeImpl implements TelegramFacade {
     @Override
     public void sendStartMessage(Long chatId) {
         log.info("Sending start message to chat {}", chatId);
-        sendMessage(getMenuMessage(chatId));
+        telegramMessagingService.sendMessage(getMenuMessage(chatId));
     }
 
     private @NotNull SendMessage getMenuMessage(Long chatId) {
@@ -96,9 +98,9 @@ public class TelegramFacadeImpl implements TelegramFacade {
     }
 
     @Override
-    public void addFilm(String filmName) {
+    public void addFilm(String filmName, Long chatId) {
         log.info("Adding film {}", filmName);
-        filmService.addFilmWithNotification(filmName);
+        filmService.addFilmWithNotification(filmName, chatId);
     }
 
     @Override
@@ -112,7 +114,7 @@ public class TelegramFacadeImpl implements TelegramFacade {
                         formattedFilmsList.add(String.format("%d. %s", i, strings.get(i - 1)));
                     }
                     var message = String.join("\n", formattedFilmsList);
-                    createAndSendMessage(chatId, message);
+                    telegramMessagingService.createAndSendMessage(chatId, message);
                 });
     }
 
@@ -122,12 +124,12 @@ public class TelegramFacadeImpl implements TelegramFacade {
         bookService.bookPlace(userName)
                 .doOnError(throwable -> {
                     if (throwable instanceof TooManyBooksException) {
-                        createAndSendMessage(chatId, "Мест нет!");
+                        telegramMessagingService.createAndSendMessage(chatId, "Мест нет!");
                     } else {
-                        createAndSendMessage(chatId, "Непредвиденная ошибка. Пиши @eltgm");
+                        telegramMessagingService.createAndSendMessage(chatId, "Непредвиденная ошибка. Пиши @eltgm");
                     }
                 })
-                .subscribe(bookingDocument -> createAndSendMessage(chatId, "Место успешно забронировано"));
+                .subscribe(bookingDocument -> telegramMessagingService.createAndSendMessage(chatId, "Место успешно забронировано"));
     }
 
     @Override
@@ -136,19 +138,19 @@ public class TelegramFacadeImpl implements TelegramFacade {
         bookService.unBookPlace(userName)
                 .doOnError(throwable -> {
                     if (throwable instanceof NotFoundException) {
-                        createAndSendMessage(chatId, "У тебя нет броней, не парься");
+                        telegramMessagingService.createAndSendMessage(chatId, "У тебя нет броней, не парься");
                     } else {
-                        createAndSendMessage(chatId, "Непредвиденная ошибка. Пиши @eltgm");
+                        telegramMessagingService.createAndSendMessage(chatId, "Непредвиденная ошибка. Пиши @eltgm");
                     }
                 })
-                .doOnSuccess(bookingDocument -> createAndSendMessage(chatId, "Бронь снята!"))
+                .doOnSuccess(bookingDocument -> telegramMessagingService.createAndSendMessage(chatId, "Бронь снята!"))
                 .subscribe();
     }
 
     @Override
     public void showMenu(Long chatId) {
         log.info("Showing menu");
-        createAndSendMessage(chatId,
+        telegramMessagingService.createAndSendMessage(chatId,
                 """
                         /start - запуск бота
                         /addFilm название_фильма - добавить фильм в список
@@ -160,7 +162,7 @@ public class TelegramFacadeImpl implements TelegramFacade {
     @Override
     public void sendError(Long chatId) {
         log.info("Sending error message to chat {}", chatId);
-        createAndSendMessage(chatId, "Неизвестная команда!");
+        telegramMessagingService.createAndSendMessage(chatId, "Неизвестная команда!");
     }
 
     @Override
@@ -171,7 +173,7 @@ public class TelegramFacadeImpl implements TelegramFacade {
 
         //End admin poll
         pollService.updatePollResults(pollId, optionIds);
-        pollService.closePoll(pollId);
+        pollService.closePoll(pollId, false);
 
         pollService.getPollAnswers(pollId)
                 .map(answers -> checkSkipParty(answers, optionIds))
@@ -183,7 +185,7 @@ public class TelegramFacadeImpl implements TelegramFacade {
         log.info("Sending end poll notification");
         pollService.getActivePolls()
                 .filter(pollDocument -> !pollDocument.getIsAdmin())
-                .subscribe(pollDocument -> createAndSendMessageWithReply(
+                .subscribe(pollDocument -> telegramMessagingService.createAndSendMessageWithReply(
                         pollDocument.getChatId(),
                         "Внимание! Attention! Warning! Alarm! Uwaga! Achtung! Опрос завершится через 5 минут",
                         pollDocument.getMessageId())
@@ -202,29 +204,35 @@ public class TelegramFacadeImpl implements TelegramFacade {
                                     .entrySet()
                                     .stream();
 
+                            boolean isPartyStart = false;
                             switch (pollDocument.getType()) {
-                                case DATE_POLL_DOCUMENT_NAME -> sendDatePollResult(votesStream, chatId);
+                                case DATE_POLL_DOCUMENT_NAME -> {
+                                    isPartyStart = isPartyStart(votesStream);
+                                    sendDatePollResult(chatId, isPartyStart);
+                                }
                                 case ACTIVITY_POLL_DOCUMENT_NAME -> sendActivityType(votesStream, chatId);
                             }
 
-                            pollService.closePoll(pollDocument.getId());
+                            pollService.closePoll(pollDocument.getId(), isPartyStart);
                         }
                 );
     }
 
-    private void sendDatePollResult(Stream<Map.Entry<String, Integer>> votesStream, Long chatId) {
-        var countOfParticipantsToPartyStart = 1;
+    private void sendDatePollResult(Long chatId, Boolean isPartyStart) {
+        if (isPartyStart) {
+            telegramMessagingService.createAndSendMessage(chatId, "Балдеж, завтра приду с новым опросом");
+        } else {
+            telegramMessagingService.createAndSendMessage(chatId, "Ну и фиг с вами, буду плакать один...");
+        }
+    }
+
+    private @NotNull Boolean isPartyStart(Stream<Map.Entry<String, Integer>> votesStream) {
         Optional<Boolean> isPartyStart = votesStream
                 .filter(stringIntegerEntry -> !stringIntegerEntry.getKey().equals(PARTY_SKIP_ANSWER))
                 .map(stringIntegerEntry -> stringIntegerEntry.getValue() >= countOfParticipantsToPartyStart)
                 .filter(aBoolean -> aBoolean)
                 .findFirst();
-
-        if (isPartyStart.isPresent()) {
-            pollService.createPoll(ACTIVITY_POLL_DOCUMENT_NAME, chatId, false);
-        } else {
-            createAndSendMessage(chatId, "Ну и фиг с вами, буду плакать один...");
-        }
+        return isPartyStart.isPresent();
     }
 
     private void sendActivityType(Stream<Map.Entry<String, Integer>> votesStream, Long chatId) {
@@ -235,8 +243,9 @@ public class TelegramFacadeImpl implements TelegramFacade {
                     var activityType = ActivityType.of(activity);
                     switch (activityType) {
                         case FILM -> filmService.getRandomFilmName()
-                                .subscribe(filmDocument -> createAndSendMessage(chatId, "Смотрим кино - " + filmDocument.getName()));
-                        case TABLETOP -> createAndSendMessage(chatId, "Играем в настолку. Посмотреть список /tabletop");
+                                .subscribe(filmDocument -> telegramMessagingService.createAndSendMessage(chatId, "Смотрим кино - " + filmDocument.getName()));
+                        case TABLETOP ->
+                                telegramMessagingService.createAndSendMessage(chatId, "Играем в настолку. Посмотреть список /tabletop");
                     }
                 });
     }
@@ -277,9 +286,7 @@ public class TelegramFacadeImpl implements TelegramFacade {
         log.info("Getting tabletops");
 
         var tabletopFormattedString = getTabletopFormattedString();
-
-        var message = new SendMessage(chatId.toString(), tabletopFormattedString);
-        sendMessage(message);
+        telegramMessagingService.createAndSendMessage(chatId, tabletopFormattedString);
     }
 
     private @NotNull String getTabletopFormattedString() {
@@ -311,25 +318,5 @@ public class TelegramFacadeImpl implements TelegramFacade {
     private boolean checkSkipParty(List<String> answers, List<Integer> optionIds) {
         var mappedVotes = PollUtility.getMappedVotes(optionIds, answers);
         return mappedVotes.contains(PARTY_SKIP_ANSWER);
-    }
-
-    private void createAndSendMessage(Long chatId, String text) {
-        var message = new SendMessage(chatId.toString(), text);
-        sendMessage(message);
-    }
-
-    private void createAndSendMessageWithReply(Long chatId, String text, Integer replyMessageId) {
-        var message = new SendMessage(chatId.toString(), text);
-        message.setReplyToMessageId(replyMessageId);
-        sendMessage(message);
-    }
-
-    private void sendMessage(SendMessage sendMessage) {
-        try {
-            telegramClient.execute(sendMessage);
-        } catch (TelegramApiException e) {
-            log.error("Telegram API exception while send message to chat {}", sendMessage.getChatId(), e);
-            throw new RuntimeException(e);
-        }
     }
 }

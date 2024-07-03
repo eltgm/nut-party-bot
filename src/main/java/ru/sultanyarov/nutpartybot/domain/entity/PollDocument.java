@@ -47,4 +47,7 @@ public class PollDocument {
 
     @Field("isAdmin")
     private Boolean isAdmin;
+
+    @Field("isPartyStart")
+    private Boolean isPartyStart;
 }
