@@ -56,4 +56,11 @@ public class ScheduledTasks {
         log.info("Clear bookings task");
         bookService.removeBookings();
     }
+
+    @Scheduled(cron = "${bot.scheduling.get-activity}")
+    @SchedulerLock(name = "getActivity")
+    public void getActivity() {
+        log.info("Get activity task");
+        pollService.sendActivityPolls();
+    }
 }

@@ -104,7 +104,7 @@ public class LongPollingBot implements SpringLongPollingBot, LongPollingSingleTh
                 String filmName = text.toLowerCase().replace(ADD_FILM_MESSAGE.toLowerCase(), "").strip();
 
                 if (hasText(filmName)) {
-                    telegramFacade.addFilm(filmName);
+                    telegramFacade.addFilm(filmName, chatId);
                 }
             }
             case FILM_LIST -> telegramFacade.getFilms(chatId);
