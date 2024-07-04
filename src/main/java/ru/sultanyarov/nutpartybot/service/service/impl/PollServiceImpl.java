@@ -169,7 +169,7 @@ public class PollServiceImpl implements PollService {
         log.info("Send activity poll");
 
         LocalDate dateForDaysPoll = LocalDate.now().minus(minusDaysForActivityPoll);
-        pollCollectionRepository.findAllByCreatedAtAndIsAdminAndPollTypeAndClosed(dateForDaysPoll, false, PollType.DATE_POLL_DOCUMENT_NAME)
+        pollCollectionRepository.findAllByCreatedAtAndIsAdminAndPollTypeAndClosed(dateForDaysPoll.toString(), false, PollType.DATE_POLL_DOCUMENT_NAME)
                 .subscribe(pollDocument -> {
                     var chatId = pollDocument.getChatId();
                     log.debug("Send activity poll to {}", chatId);
