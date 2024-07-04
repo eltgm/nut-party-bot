@@ -8,8 +8,6 @@ import reactor.core.publisher.Mono;
 import ru.sultanyarov.nutpartybot.domain.entity.PollDocument;
 import ru.sultanyarov.nutpartybot.domain.model.PollType;
 
-import java.time.LocalDate;
-
 @Repository
 public interface PollCollectionRepository extends ReactiveMongoRepository<PollDocument, Long> {
     Mono<PollDocument> findByIdAndClosedAtIsNull(Long pollId);
@@ -38,5 +36,5 @@ public interface PollCollectionRepository extends ReactiveMongoRepository<PollDo
                                 """
             }
     )
-    Flux<PollDocument> findAllByCreatedAtAndIsAdminAndPollTypeAndClosed(LocalDate createdAt, Boolean isAdmin, PollType pollType);
+    Flux<PollDocument> findAllByCreatedAtAndIsAdminAndPollTypeAndClosed(String createdAt, Boolean isAdmin, PollType pollType);
 }

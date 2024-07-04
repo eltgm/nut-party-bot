@@ -205,12 +205,13 @@ public class TelegramFacadeImpl implements TelegramFacade {
                                     .stream();
 
                             boolean isPartyStart = false;
+                            var messageId = pollDocument.getMessageId();
                             switch (pollDocument.getType()) {
                                 case DATE_POLL_DOCUMENT_NAME -> {
                                     isPartyStart = isPartyStart(votesStream);
-                                    sendDatePollResult(chatId, isPartyStart);
+                                    sendDatePollResult(chatId, isPartyStart, messageId);
                                 }
-                                case ACTIVITY_POLL_DOCUMENT_NAME -> sendActivityType(votesStream, chatId);
+                                case ACTIVITY_POLL_DOCUMENT_NAME -> sendActivityType(votesStream, chatId, messageId);
                             }
 
                             pollService.closePoll(pollDocument.getId(), isPartyStart);
@@ -218,11 +219,11 @@ public class TelegramFacadeImpl implements TelegramFacade {
                 );
     }
 
-    private void sendDatePollResult(Long chatId, Boolean isPartyStart) {
+    private void sendDatePollResult(Long chatId, Boolean isPartyStart, Integer messageId) {
         if (isPartyStart) {
-            telegramMessagingService.createAndSendMessage(chatId, "Балдеж, завтра приду с новым опросом");
+            telegramMessagingService.createAndSendMessageWithReply(chatId, "Балдеж, завтра приду с новым опросом", messageId);
         } else {
-            telegramMessagingService.createAndSendMessage(chatId, "Ну и фиг с вами, буду плакать один...");
+            telegramMessagingService.createAndSendMessageWithReply(chatId, "Ну и фиг с вами, буду плакать один...", messageId);
         }
     }
 
@@ -235,7 +236,7 @@ public class TelegramFacadeImpl implements TelegramFacade {
         return isPartyStart.isPresent();
     }
 
-    private void sendActivityType(Stream<Map.Entry<String, Integer>> votesStream, Long chatId) {
+    private void sendActivityType(Stream<Map.Entry<String, Integer>> votesStream, Long chatId, Integer messageId) {
         votesStream
                 .max(Map.Entry.comparingByValue())
                 .map(Map.Entry::getKey)
@@ -243,9 +244,9 @@ public class TelegramFacadeImpl implements TelegramFacade {
                     var activityType = ActivityType.of(activity);
                     switch (activityType) {
                         case FILM -> filmService.getRandomFilmName()
-                                .subscribe(filmDocument -> telegramMessagingService.createAndSendMessage(chatId, "Смотрим кино - " + filmDocument.getName()));
+                                .subscribe(filmDocument -> telegramMessagingService.createAndSendMessageWithReply(chatId, "Смотрим кино - " + filmDocument.getName(), messageId));
                         case TABLETOP ->
-                                telegramMessagingService.createAndSendMessage(chatId, "Играем в настолку. Посмотреть список /tabletop");
+                                telegramMessagingService.createAndSendMessageWithReply(chatId, "Играем в настолку. Посмотреть список /tabletop", messageId);
                     }
                 });
     }
