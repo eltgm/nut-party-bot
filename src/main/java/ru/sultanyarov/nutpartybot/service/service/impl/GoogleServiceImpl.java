@@ -1,6 +1,7 @@
 package ru.sultanyarov.nutpartybot.service.service.impl;
 
 import com.google.api.services.sheets.v4.Sheets;
+import com.google.api.services.sheets.v4.model.ValueRange;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -10,6 +11,7 @@ import ru.sultanyarov.nutpartybot.domain.model.TabletopInfo;
 import ru.sultanyarov.nutpartybot.service.service.GoogleService;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -51,6 +53,25 @@ public class GoogleServiceImpl implements GoogleService {
         }
 
         return tabletopInfos;
+    }
+
+    public void addFilm(String filmName, String tableName) {
+        log.info("Adding film: {} to table: {}", filmName, tableName);
+        ValueRange body = new ValueRange()
+                .setValues(List.of(
+                        Arrays.asList(false, "", filmName)
+                ));
+        try {
+            sheets.spreadsheets()
+                    .values()
+                    .append(googleSpreadSheetProperties.getSpreadsheetId(), String.format("%s!A1", tableName), body)
+                    .setValueInputOption("USER_ENTERED")
+                    .setInsertDataOption("INSERT_ROWS")
+                    .execute();
+        } catch (IOException e) {
+            log.error("Error while writing in spreadsheet {}", tableName, e);
+            throw new RuntimeException(e);
+        }
     }
 
     private List<MovieInfo> getMoviesInfos(String tableName, Integer rowNumber) {

@@ -24,4 +24,12 @@ public interface GoogleService {
      * @return {@link Set} of {@link TabletopInfo}
      */
     Set<TabletopInfo> getTabletopsFromTable(String tableId);
+
+    /**
+     * Adding film to table
+     *
+     * @param filmName  name of film
+     * @param tableName table name
+     */
+    void addFilm(String filmName, String tableName);
 }

@@ -14,8 +14,9 @@ public interface FilmService {
      *
      * @param filmName film name
      * @param chatId   chat id to result message
+     * @param userName name of user
      */
-    void addFilmWithNotification(String filmName, Long chatId);
+    void addFilmWithNotification(String filmName, Long chatId, String userName);
 
     /**
      * Getting list of actual films

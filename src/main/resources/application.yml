@@ -17,7 +17,7 @@ bot:
     clear-bookings: ${CLEAR_BOOKINGS_CRON}
     get-activity: ${GET_ACTIVITY_CRON}
   google:
-    token: ${GOOGLE_TOKEN}
+    service-secret: ${GOOGLE_SERVICE_SECRET}
     spreadsheet-id: ${GOOGLE_SPREADSHEET_ID}
     tables: ${TABLES}
     tabletop-table: ${TABLE_TOP_TABLE}
