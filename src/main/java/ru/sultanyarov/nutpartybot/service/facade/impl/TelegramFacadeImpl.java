@@ -98,9 +98,9 @@ public class TelegramFacadeImpl implements TelegramFacade {
     }
 
     @Override
-    public void addFilm(String filmName, Long chatId) {
+    public void addFilm(String filmName, Long chatId, String userName) {
         log.info("Adding film {}", filmName);
-        filmService.addFilmWithNotification(filmName, chatId);
+        filmService.addFilmWithNotification(filmName, chatId, userName);
     }
 
     @Override

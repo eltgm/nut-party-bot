@@ -19,9 +19,10 @@ public interface TelegramFacade {
      * Adding new film
      *
      * @param filmName name of adding film
-     * @param chatId chat id to result message
+     * @param chatId   chat id to result message
+     * @param userName name of user
      */
-    void addFilm(String filmName, Long chatId);
+    void addFilm(String filmName, Long chatId, String userName);
 
     /**
      * Getting all films
