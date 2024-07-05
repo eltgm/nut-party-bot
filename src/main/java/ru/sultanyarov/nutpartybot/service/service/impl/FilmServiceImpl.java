@@ -30,12 +30,13 @@ public class FilmServiceImpl implements FilmService {
     private final GoogleSpreadSheetProperties googleSpreadSheetProperties;
 
     @Override
-    public void addFilmWithNotification(String filmName, Long chatId) {
+    public void addFilmWithNotification(String filmName, Long chatId, String userName) {
         log.info("Add film with name: {}", filmName);
         filmCollectionRepository.save(new FilmDocument(filmName))
                 .subscribe(filmDocument -> {
-                    telegramMessagingService.createAndSendMessage(channelsProperties.getAdmin(), String.format("Добавь '%s' в список фильмов!", filmDocument.getName()));
-                    telegramMessagingService.createAndSendMessage(chatId, "Запрос на добавление фильма отправлен!");
+                    googleService.addFilm(filmName, "Общее");
+                    telegramMessagingService.createAndSendMessage(channelsProperties.getAdmin(), String.format("%s добавил '%s' в список фильмов!", userName, filmDocument.getName()));
+                    telegramMessagingService.createAndSendMessage(chatId, "Фильм добавлен!");
                 });
     }
 
