@@ -18,7 +18,6 @@ import ru.sultanyarov.nutpartybot.domain.repository.PollInfoCollectionRepository
 import ru.sultanyarov.nutpartybot.service.service.PollService;
 import ru.sultanyarov.nutpartybot.service.service.TelegramMessagingService;
 
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -32,7 +31,7 @@ import static ru.sultanyarov.nutpartybot.service.utils.PollUtility.getMappedVote
 @RequiredArgsConstructor
 public class PollServiceImpl implements PollService {
     @Value("${bot.minus-days-for-activity-poll}")
-    private Duration minusDaysForActivityPoll;
+    private Integer minusDaysForActivityPoll;
 
     private final TelegramMessagingService telegramMessagingService;
     private final PollInfoCollectionRepository pollInfoCollectionRepository;
@@ -168,7 +167,7 @@ public class PollServiceImpl implements PollService {
     public void sendActivityPolls() {
         log.info("Send activity poll");
 
-        LocalDate dateForDaysPoll = LocalDate.now().minus(minusDaysForActivityPoll);
+        LocalDate dateForDaysPoll = LocalDate.now().minusDays(minusDaysForActivityPoll);
         pollCollectionRepository.findAllByCreatedAtAndIsAdminAndPollTypeAndClosed(dateForDaysPoll.toString(), false, PollType.DATE_POLL_DOCUMENT_NAME)
                 .subscribe(pollDocument -> {
                     var chatId = pollDocument.getChatId();
